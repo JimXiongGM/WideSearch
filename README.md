@@ -75,14 +75,25 @@ source .venv/bin/activate
 
 ## Inference and Evaluation
 Run the following command to perform inference and evaluation:
-```
-python3 scripts/run_infer_and_eval_batching.py \
---trial_num={your_trial_num} \
---model_config_name={your_model_config_name} \
---response_root={your_response_root} \
---result_save_root={your_result_save_root} \
---stage={infer/eval or both} 
+```bash
+python scripts/run_infer_and_eval_batching.py \
+  --trial_num={your_trial_num} \
+  --model_config_name={your_model_config_name} \
+  --response_root={your_response_root} \
+  --result_save_root={your_result_save_root} \
+  --stage={infer/eval or both}
+
+
+python scripts/run_infer_and_eval_batching.py \
+  --trial_num=1 \
+  --model_config_name=doubao-1.6 \
+  --response_root=data/output \
+  --result_save_root=data/output \
+  --stage=infer
 ``` 
+
+
+
 
 ## License
 This project is licensed under MIT. See the <a href="LICENSE">LICENSE</a> file for details.

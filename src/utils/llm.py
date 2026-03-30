@@ -5,9 +5,9 @@ from typing import Any, Iterable, List, Optional, Union
 
 from loguru import logger
 from openai import AzureOpenAI
+from openai import OpenAI
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from tenacity import retry, stop_after_attempt, wait_incrementing
-from volcenginesdkarkruntime import Ark
 
 from src.agent.schema import LLMOutputItem, ModelResponse, ToolCall
 from src.utils.config import model_config
@@ -22,6 +22,8 @@ def ark_complete(
     tools: Optional[List[dict]] = None,
     **generate_kwargs,
 ) -> Optional[ChatCompletionMessage]:
+    from volcenginesdkarkruntime import Ark
+
     def create_ark_client(base_url, api_key):
         return Ark(
             base_url=base_url,
@@ -67,7 +69,12 @@ def openai_complete(
             timeout=300,
         )
 
-    openai_client = create_openai_client(base_url, api_key)
+    # openai_client = create_openai_client(base_url, api_key)
+
+    openai_client = OpenAI(
+        api_key=api_key,
+        base_url=base_url,
+    )
     logger.debug(f"messages: {messages}")
     logger.debug(f"tools: {tools}")
     logger.debug(generate_kwargs)
@@ -169,7 +176,7 @@ def llm_completion(
         f"model_config_name: {model_config_name}, model_name: {model_name}, generate_kwargs: {generate_kwargs}"
     )
 
-    if "doubao" in model_name or model_name.startswith("ep") or "k2" in model_name:
+    if "doubao" in model_name or model_name.startswith("ep"):
         response = ark_complete(
             base_url=base_url,
             api_key=api_key,
@@ -183,6 +190,7 @@ def llm_completion(
         or "o3" in model_name
         or "gemini" in model_name
         or "o4" in model_name
+        or "kimi" in model_name
     ):
         retry_if_empty = True if "gemini" in model_name else False
         response = openai_complete(
@@ -237,3 +245,17 @@ def transform_model_response(response: Any | None) -> ModelResponse:
             )
     out.outputs.append(item)
     return out
+
+if __name__ == "__main__":
+    # python src/utils/llm.py
+    # test gpt-4.1-2025-04-14
+    import os
+    client = OpenAI(
+        api_key=os.getenv("GPTUU_API_KEY"),
+        base_url="https://opus.gptuu.com/v1",
+    )
+    response = client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[{"role": "user", "content": "What is the capital of France?"}],
+    )
+    print(response)

@@ -256,6 +256,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--thread_num", type=int, default=4, help="thread num to run infer and eval"
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="run infer/eval sequentially in a for-loop (easier breakpoints)",
+    )
 
     args = parser.parse_args()
 
@@ -272,7 +277,7 @@ if __name__ == "__main__":
 
     tools = _default_tools
 
-    for instance_id in instance_id_list:
+    for instance_id in instance_id_list[:2]:
         if args.instance_id and instance_id not in args.instance_id.split(","):
             continue
         query = data_loader.load_query_by_instance_id(instance_id)
@@ -295,26 +300,43 @@ if __name__ == "__main__":
                     tools=tools,
                 )
             )
+
     logger.info(f"total task num: {len(tasks)}")
     if args.stage in ["infer", "both"]:
-        # multi threading
-        with ThreadPoolExecutor(max_workers=args.thread_num) as executor:
-            results = executor.map(lambda task: asyncio.run(task.infer()), tasks)
-            try:
-                for result in results:
+        if args.debug:
+            for task in tasks:
+                try:
+                    result = asyncio.run(task.infer())
                     logger.info(f"infer success, instance_id: {result[0].instance_id}")
-            except Exception:
-                logger.error(f"infer error: {traceback.format_exc()}")
+                except Exception:
+                    logger.error(f"infer error: {traceback.format_exc()}")
+        else:
+            with ThreadPoolExecutor(max_workers=args.thread_num) as executor:
+                results = executor.map(lambda task: asyncio.run(task.infer()), tasks)
+                try:
+                    for result in results:
+                        logger.info(
+                            f"infer success, instance_id: {result[0].instance_id}"
+                        )
+                except Exception:
+                    logger.error(f"infer error: {traceback.format_exc()}")
 
     if args.stage in ["eval", "both"]:
-        # multi threading
-        with ThreadPoolExecutor(max_workers=args.thread_num) as executor:
-            results = executor.map(lambda task: task.eval(), tasks)
-            try:
-                for result in results:
+        if args.debug:
+            for task in tasks:
+                try:
+                    result = task.eval()
                     logger.info(f"eval success, instance_id: {result.instance_id}")
-            except Exception as e:
-                logger.error(f"eval error: {e}")
+                except Exception as e:
+                    logger.error(f"eval error: {e}")
+        else:
+            with ThreadPoolExecutor(max_workers=args.thread_num) as executor:
+                results = executor.map(lambda task: task.eval(), tasks)
+                try:
+                    for result in results:
+                        logger.info(f"eval success, instance_id: {result.instance_id}")
+                except Exception as e:
+                    logger.error(f"eval error: {e}")
         summary_result_path = (
             f"{result_save_root}/{model_config_name}_trial_num_{trial_num}_summary.json"
         )

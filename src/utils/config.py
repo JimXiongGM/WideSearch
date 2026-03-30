@@ -1,5 +1,6 @@
 # Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
 # SPDX-License-Identifier: MIT
+import os
 
 model_config = {
     "model_config_name": {
@@ -7,10 +8,10 @@ model_config = {
         "base_url": "YOUR_BASE_URL",
         "api_key": "YOUR_API_KEY",
     },
-    "k2": {
-        "model_name": "kimi-k2-250711",
-        "base_url": "",
-        "api_key": "",
+    "kimi": {
+        "model_name": "kimi-k2.5",
+        "base_url": "https://api.moonshot.cn/v1",
+        "api_key": os.getenv("MOONSHOT_API_KEY"),
         "generate_kwargs": {
             "max_tokens": 32768,
         },
@@ -83,8 +84,8 @@ model_config = {
     },
     "default_eval_config": {
         "model_name": "gpt-4.1-2025-04-14",
-        "base_url": "",
-        "api_key": "",
+        "base_url": "https://opus.gptuu.com/v1",
+        "api_key": os.getenv("GPTUU_API_KEY"),
         "generate_kwargs": {
             "max_tokens": 10240,
         },
